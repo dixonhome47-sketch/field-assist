@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Tronics Field Assist</title>
+<script src="config.js"></script>
+<script src="data.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f4f1;--surface:#fff;--surface2:#f0efe9;--border:#e2e1db;--tronics:#1a3a2e;--tronics-mid:#2d5c48;--tronics-light:#e8f2ed;--accent:#e8572a;--accent-light:#fdf0eb;--gold:#c49a3c;--text:#1c1b18;--text-mid:#4a4940;--text-muted:#8a8878;--green:#2d7a4f;--green-bg:#edf7f2;--amber:#c47c1a;--amber-bg:#fef8ed;--red:#c0392b;--red-bg:#fdf2f1;--font:'Inter',sans-serif;--mono:'IBM Plex Mono',monospace;--radius:10px;--radius-sm:6px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;min-height:100vh;line-height:1.5}
+.hdr{background:var(--tronics);padding:12px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+.hdr-logo{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.hdr-title{font-size:15px;font-weight:600;color:#fff}
+.hdr-sub{font-size:11px;color:rgba(255,255,255,0.5);font-family:var(--mono)}
+.hdr-role{margin-left:auto;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.8);font-size:11px;padding:4px 10px;border-radius:20px;font-family:var(--mono);cursor:pointer;white-space:nowrap}
+.layout{display:flex;min-height:calc(100vh - 56px)}
+.sidebar{width:210px;background:var(--surface);border-right:1px solid var(--border);flex-shrink:0;padding:12px 0}
+.main{flex:1;overflow-y:auto;padding:20px}
+.nav-item{padding:9px 16px;font-size:13px;font-weight:500;color:var(--text-mid);cursor:pointer;display:flex;align-items:center;gap:9px;border-left:3px solid transparent;transition:all 0.15s}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--tronics-light);color:var(--tronics);border-left-color:var(--tronics);font-weight:600}
+.nav-section{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);padding:12px 16px 4px}
+@media(max-width:640px){.sidebar{display:none}.main{padding:14px}.mob-nav{display:flex!important}}
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--tronics);padding:20px}
+.login-card{background:var(--surface);border-radius:16px;padding:28px 24px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:18px}
+.login-logo{width:44px;height:44px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto}
+.login-title{font-size:19px;font-weight:600;color:var(--text);text-align:center}
+.login-sub{font-size:12px;color:var(--text-muted);text-align:center;margin-top:-12px}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.role-btn{padding:14px 8px;border-radius:var(--radius);border:2px solid var(--border);background:var(--surface2);cursor:pointer;text-align:center;transition:all 0.15s;font-family:var(--font)}
+.role-btn:hover,.role-btn.selected{border-color:var(--tronics);background:var(--tronics-light)}
+.role-icon{font-size:22px;margin-bottom:5px}
+.role-name{font-size:12px;font-weight:600;color:var(--text)}
+.role-desc{font-size:10px;color:var(--text-muted);margin-top:2px}
+.pin-row{display:flex;gap:10px;justify-content:center}
+.pin-dot{width:13px;height:13px;border-radius:50%;background:var(--border);transition:background 0.15s}
+.pin-dot.filled{background:var(--tronics)}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.num-btn{padding:13px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);font-size:18px;font-weight:500;cursor:pointer;font-family:var(--mono);transition:all 0.15s}
+.num-btn:hover{background:var(--tronics-light);border-color:var(--tronics)}
+.num-btn:active{transform:scale(0.95)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:640px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.stat-val{font-size:26px;font-weight:500;line-height:1}
+.stat-val.accent{color:var(--accent)}.stat-val.amber{color:var(--amber)}.stat-val.green{color:var(--green)}
+.stat-label{font-size:11px;color:var(--text-muted);margin-top:4px}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{padding:8px 12px;text-align:left;font-weight:600;font-size:11px;color:var(--text-muted);background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr.clickable{cursor:pointer}.tbl tr.clickable:hover td{background:var(--surface2)}
+.badge{display:inline-block;font-size:10.5px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.badge.open,.badge.new{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(196,124,26,0.2)}
+.badge.in_progress,.badge.in-progress{background:#e8f0fe;color:#1a73e8;border:1px solid rgba(26,115,232,0.2)}
+.badge.pending_parts,.badge.pending-parts,.badge.pending{background:var(--accent-light);color:var(--accent);border:1px solid rgba(232,87,42,0.2)}
+.badge.complete{background:var(--green-bg);color:var(--green);border:1px solid rgba(45,122,79,0.2)}
+.badge.closed,.badge.shipped{background:var(--surface2);color:var(--text-muted)}
+.badge.high{background:var(--red-bg);color:var(--red)}
+.badge.medium{background:var(--amber-bg);color:var(--amber)}
+.badge.low{background:var(--green-bg);color:var(--green)}
+.btn{padding:9px 16px;border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;border:none;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--tronics);color:#fff}.btn-primary:hover{background:var(--tronics-mid)}
+.btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{background:#d4431d}
+.btn-ghost{background:transparent;color:var(--text-mid);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--tronics);color:var(--tronics)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.form-grid{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+.field label{font-size:12px;font-weight:500;color:var(--text-mid)}
+.field input,.field select,.field textarea{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 11px;font-family:var(--font);font-size:13px;color:var(--text);outline:none;transition:border-color 0.15s;width:100%;-webkit-appearance:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--tronics)}
+.field input::placeholder,.field textarea::placeholder{color:var(--text-muted)}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238a8878' d='M6 8L2 4h8z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.field textarea{resize:none;min-height:70px;line-height:1.55}
+.search-wrap{position:relative;margin-bottom:12px}
+.search-wrap input{width:100%;padding:9px 11px 9px 36px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;color:var(--text);outline:none}
+.search-wrap input:focus{border-color:var(--tronics)}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);width:16px;height:16px;pointer-events:none}
+.search-results{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);max-height:220px;overflow-y:auto;position:absolute;width:100%;z-index:20;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.1)}
+.sri{padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12.5px}
+.sri:last-child{border-bottom:none}
+.sri:hover{background:var(--tronics-light)}
+.sri-code{font-family:var(--mono);font-size:10.5px;color:var(--text-muted);margin-top:2px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius);width:100%;max-width:700px;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column}
+.modal-header{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
+.modal-title{font-size:15px;font-weight:600}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-muted);padding:2px 6px;line-height:1}
+.modal-body{padding:20px;display:flex;flex-direction:column;gap:14px;flex:1}
+.modal-footer{padding:13px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--surface)}
+.steps{display:flex;align-items:center;gap:0;margin-bottom:18px;overflow-x:auto;padding-bottom:2px}
+.step{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--border);color:var(--text-muted);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;font-family:var(--mono)}
+.step.active .step-num{background:var(--tronics);color:#fff}
+.step.done .step-num{background:var(--green);color:#fff}
+.step-label{font-size:11px;color:var(--text-muted);white-space:nowrap}
+.step.active .step-label{color:var(--tronics);font-weight:500}
+.step.done .step-label{color:var(--green)}
+.step-line{width:20px;height:1px;background:var(--border);flex-shrink:0;margin:0 4px}
+.part-row{padding:9px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.part-row:last-child{border-bottom:none}
+.part-row:hover{background:var(--surface2)}
+.part-info{flex:1;min-width:0}
+.part-name{font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.part-code{font-size:10.5px;font-family:var(--mono);color:var(--text-muted)}
+.part-stock{text-align:right;flex-shrink:0;font-size:11.5px;font-weight:500}
+.s-ok{color:var(--green)}.s-low{color:var(--amber)}.s-out{color:var(--red)}
+.page-title{font-size:20px;font-weight:600;margin-bottom:4px;letter-spacing:-0.01em}
+.page-sub{font-size:13px;color:var(--text-muted);margin-bottom:18px}
+.divider{height:1px;background:var(--border);margin:14px 0}
+.info-row{display:flex;gap:8px;padding:3px 0;font-size:12.5px}
+.info-label{color:var(--text-muted);width:120px;flex-shrink:0}
+.info-val{color:var(--text);font-weight:500;word-break:break-word}
+.alert{padding:10px 13px;border-radius:var(--radius-sm);font-size:12.5px;margin-bottom:10px;display:flex;gap:8px;align-items:flex-start;line-height:1.5}
+.alert.info{background:var(--tronics-light);color:var(--tronics)}
+.alert.warn{background:var(--amber-bg);color:var(--amber)}
+.chat-messages{display:flex;flex-direction:column;gap:10px;max-height:280px;overflow-y:auto;margin-bottom:10px;min-height:40px}
+.msg{display:flex;flex-direction:column;gap:3px;animation:fadeUp 0.2s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{align-items:flex-end}.msg.assistant{align-items:flex-start}
+.msg-lbl{font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);padding:0 3px}
+.msg-bubble{padding:10px 13px;border-radius:12px;font-size:12.5px;line-height:1.65;max-width:95%}
+.msg.user .msg-bubble{background:var(--tronics);color:#fff;border-bottom-right-radius:3px}
+.msg.assistant .msg-bubble{background:var(--surface2);border:1px solid var(--border);border-bottom-left-radius:3px}
+.msg.assistant .msg-bubble h3{font-size:11px;font-weight:600;color:var(--tronics);margin:10px 0 4px;text-transform:uppercase;letter-spacing:0.04em}
+.msg.assistant .msg-bubble h3:first-child{margin-top:0}
+.msg.assistant .msg-bubble ul{padding-left:14px;display:flex;flex-direction:column;gap:3px;margin:4px 0}
+.msg.assistant .msg-bubble li,.msg.assistant .msg-bubble p{font-size:12px;line-height:1.55;margin:3px 0}
+.msg.assistant .msg-bubble strong{color:var(--accent)}
+.thinking{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;width:fit-content}
+.thinking-dots{display:flex;gap:4px}
+.thinking-dots span{width:5px;height:5px;border-radius:50%;background:var(--tronics);animation:blink 1.2s infinite}
+.thinking-dots span:nth-child(2){animation-delay:.2s}
+.thinking-dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.15}40%{opacity:1}}
+.chat-row{display:flex;gap:8px;align-items:flex-end}
+.chat-wrap{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;align-items:flex-end;padding:7px 10px;gap:6px;transition:border-color .15s}
+.chat-wrap:focus-within{border-color:var(--tronics)}
+.chat-wrap textarea{flex:1;background:transparent;border:none;outline:none;resize:none;color:var(--text);font-family:var(--font);font-size:13px;line-height:1.5;max-height:80px;min-height:20px}
+.chat-wrap textarea::placeholder{color:var(--text-muted)}
+.send-btn{width:36px;height:36px;border-radius:var(--radius-sm);background:var(--tronics);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.send-btn:hover{background:var(--tronics-mid)}.send-btn:disabled{background:var(--border);cursor:not-allowed}
+.mic-btn{background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;transition:color .15s}
+.mic-btn:hover{color:var(--tronics)}.mic-btn.rec{color:var(--accent)}
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:40;padding:8px 0}
+.mob-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:6px;color:var(--text-muted);font-family:var(--font);font-size:10px;font-weight:500}
+.mob-btn.active{color:var(--tronics)}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="#fff" stroke-width="1.8"/><path d="M12 8v4.5l2.5 2.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </div>
+    <div>
+      <div class="login-title">Field Assist</div>
+      <div class="login-sub">Tronics · Videojet Service</div>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:8px;text-align:center">Select role</div>
+      <div class="role-grid">
+        <div class="role-btn" id="rl-cs" onclick="selRole('cs')">
+          <div class="role-icon">🖥️</div><div class="role-name">Customer Service</div><div class="role-desc">Office · tickets & fleet</div>
+        </div>
+        <div class="role-btn" id="rl-tech" onclick="selRole('tech')">
+          <div class="role-icon">🔧</div><div class="role-name">Technician</div><div class="role-desc">Field · service calls</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:8px;text-align:center">Select name</div>
+      <select id="loginName" style="width:100%;padding:9px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;color:var(--text);outline:none;-webkit-appearance:none">
+        <option value="">Choose…</option>
+      </select>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:10px;text-align:center">PIN (use 1234 for demo)</div>
+      <div class="pin-row" id="pinDots"><div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div><div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div></div>
+      <div style="margin-top:12px" class="numpad" id="numpad"></div>
+    </div>
+    <div id="loginErr" style="display:none;color:var(--red);font-size:12px;text-align:center"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="hdr">
+    <div class="hdr-logo"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="#fff" stroke-width="1.5"/><path d="M10 6.5v3.5l2 2" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+    <div><div class="hdr-title">Field Assist</div><div class="hdr-sub">Tronics · Videojet</div></div>
+    <div class="hdr-role" id="hdrRole" onclick="logout()">Logout</div>
+  </div>
+  <div class="layout">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="main" id="main"></div>
+  </div>
+  <div class="mob-nav" id="mobNav"></div>
+</div>
+
+<!-- NEW TICKET MODAL -->
+<div class="modal-overlay" id="ntModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">New Service Ticket</div><button class="modal-close" onclick="closeModal('ntModal')">×</button></div>
+    <div class="modal-body" id="ntBody"></div>
+    <div class="modal-footer" id="ntFoot"></div>
+  </div>
+</div>
+
+<!-- TICKET DETAIL MODAL -->
+<div class="modal-overlay" id="tdModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="tdTitle">Ticket</div><button class="modal-close" onclick="closeModal('tdModal')">×</button></div>
+    <div class="modal-body" id="tdBody"></div>
+    <div class="modal-footer" id="tdFoot"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ── TICKETS (in-memory Phase 1) ───────────────────────────────────────────────
+let TICKETS=[
+  {id:'TRN-001',cust:'Cheeky Monkey Brewing Company',cc:'C13895',serial:'20293006C56ZH',model:'VJ1280 STD IP55',fault:'No jet at startup — not priming after weekend shutdown',status:'open',pri:'high',tech:'Con Haltogiannidis',created:'2026-06-10',notes:'Customer says line has been down since Monday morning. Urgent.',parts:[],order:null},
+  {id:'TRN-002',cust:'RIVIERA FRESH',cc:'C12511',serial:'25357001C65ZH',model:'VJ1580 PLUS IP55',fault:'Viscosity alarm recurring — third occurrence this month',status:'in_progress',pri:'medium',tech:'Pezhman Asadian',created:'2026-06-11',notes:'Third time this has occurred. Suspected make-up pump issue.',parts:[],order:{ref:'ORD-0041',status:'shipped',carrier:'TNT',tracking:'610123456789',eta:'2026-06-14'}},
+  {id:'TRN-003',cust:'Lactalis Australia Pty Ltd',cc:'C10689',serial:'203281040BL',model:'UNICORN 100/240V',fault:'Printhead partial blockage — intermittent missing dots',status:'pending_parts',pri:'medium',tech:'Hiren Brahmbhatt',created:'2026-06-09',notes:'',parts:[],order:{ref:'ORD-0039',status:'pending',carrier:null,tracking:null,eta:null}},
+  {id:'TRN-004',cust:'THOMAS FOODS INTERNATIONAL LOBETHAL',cc:'C10537',serial:'2035711008TZH',model:'VJ6330 TTO RH 53MM',fault:'Ribbon jam — foil not feeding correctly',status:'complete',pri:'low',tech:'Richard Wallis',created:'2026-06-08',notes:'Resolved on-site. Replaced ribbon drive motor.',parts:[],order:null},
+];
+let nxtNum=5;
+
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+let CU=null,CR=null,pin='',chatMsgs=[],isAI=false,wzStep=1,wzData={},wzParts=[],recognition=null;
+
+const CS_USERS=[{id:'cs1',name:'Judith'},{id:'cs2',name:'Hope'},{id:'cs3',name:'Dhara'}];
+
+function selRole(r){
+  CR=r;
+  document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('rl-'+r).classList.add('selected');
+  const sel=document.getElementById('loginName');
+  sel.innerHTML='<option value="">Choose…</option>';
+  if(r==='cs') CS_USERS.forEach(u=>sel.innerHTML+=`<option value="${u.id}">${u.name} (CS)</option>`);
+  else DB_TECHS.forEach(t=>sel.innerHTML+=`<option value="t${t.id}">${t.name} (${t.state})</option>`);
+}
+
+(()=>{
+  const pad=document.getElementById('numpad');
+  [1,2,3,4,5,6,7,8,9,'','0','⌫'].forEach(n=>{
+    const b=document.createElement('button');b.className='num-btn';b.textContent=n;
+    if(n==='')b.style.visibility='hidden';
+    b.onclick=()=>pinPress(n);pad.appendChild(b);
+  });
+})();
+
+function pinPress(n){
+  if(n==='⌫')pin=pin.slice(0,-1);
+  else if(pin.length<4)pin+=n;
+  for(let i=0;i<4;i++)document.getElementById('pd'+i).classList.toggle('filled',i<pin.length);
+  if(pin.length===4)tryLogin();
+}
+
+function tryLogin(){
+  const uid=document.getElementById('loginName').value;
+  if(!CR){errLogin('Select a role first');return;}
+  if(!uid){errLogin('Select your name');return;}
+  if(pin==='1234'||pin==='0000'){
+    if(CR==='cs'){
+      const u=CS_USERS.find(x=>x.id===uid);
+      CU={id:uid,name:u.name,role:'cs'};
+    } else {
+      const t=DB_TECHS.find(x=>'t'+x.id===uid);
+      CU={id:uid,name:t.name,role:'tech',tech:t};
+    }
+    launch();
+  } else { errLogin('Wrong PIN — use 1234 for demo'); pin=''; for(let i=0;i<4;i++)document.getElementById('pd'+i).classList.remove('filled'); }
+}
+
+function errLogin(m){const e=document.getElementById('loginErr');e.textContent=m;e.style.display='block';setTimeout(()=>e.style.display='none',2500);}
+
+function launch(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('hdrRole').textContent=CU.name+' · Logout';
+  buildNav();showView(CR==='cs'?'dash':'calls');
+}
+
+function logout(){CU=null;CR=null;pin='';chatMsgs=[];document.getElementById('loginScreen').style.display='flex';document.getElementById('app').style.display='none';document.getElementById('loginName').value='';document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('selected'));for(let i=0;i<4;i++)document.getElementById('pd'+i).classList.remove('filled');}
+
+// ── NAV ──────────────────────────────────────────────────────────────────────
+const NAV_CS=[
+  {id:'dash',l:'Dashboard',ic:'📊'},
+  {id:'tickets',l:'All Tickets',ic:'📋'},
+  {id:'new_ticket',l:'New Ticket',ic:'➕'},
+  {id:'fleet',l:'Fleet',ic:'🖨️'},
+  {id:'inventory',l:'Inventory',ic:'📦'},
+];
+const NAV_TECH=[
+  {id:'calls',l:'My Calls',ic:'📋'},
+  {id:'new_ticket',l:'Raise Ticket',ic:'➕'},
+  {id:'parts',l:'Parts Lookup',ic:'📦'},
+  {id:'ai',l:'AI Assist',ic:'🤖'},
+];
+
+function buildNav(){
+  const nav=CR==='cs'?NAV_CS:NAV_TECH;
+  const sb=document.getElementById('sidebar'),mn=document.getElementById('mobNav');
+  sb.innerHTML=`<div class="nav-section">${CU.name}</div>`;mn.innerHTML='';
+  nav.forEach(n=>{
+    sb.innerHTML+=`<div class="nav-item" id="nv-${n.id}" onclick="showView('${n.id}')">${n.ic} ${n.l}</div>`;
+    const b=document.createElement('button');b.className='mob-btn';b.id='mb-'+n.id;
+    b.innerHTML=`<span style="font-size:18px">${n.ic}</span><span>${n.l}</span>`;
+    b.onclick=()=>showView(n.id);mn.appendChild(b);
+  });
+}
+
+function setNav(id){document.querySelectorAll('.nav-item,.mob-btn').forEach(e=>{e.classList.remove('active');if(e.id==='nv-'+id||e.id==='mb-'+id)e.classList.add('active');});}
+
+function showView(id){
+  if(id==='new_ticket'){openNewTicket();return;}
+  setNav(id);
+  const m=document.getElementById('main');
+  if(id==='dash')rDash(m);
+  else if(id==='tickets')rTickets(m,'all');
+  else if(id==='fleet')rFleet(m);
+  else if(id==='inventory'||id==='parts')rInventory(m);
+  else if(id==='calls')rCalls(m);
+  else if(id==='ai')rAI(m);
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function genRef(){return 'TRN-'+String(nxtNum++).padStart(3,'0');}
+function genOrd(){return 'ORD-'+String(Math.floor(Math.random()*9000)+1000);}
+function fmtDate(d){if(!d)return '—';try{return new Date(d).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'});}catch{return d;}}
+function hr(){const h=new Date().getHours();return h<12?'morning':h<17?'afternoon':'evening';}
+
+function badge(s){
+  const m={open:'Open',new:'New',in_progress:'In Progress',pending_parts:'Parts Pending',complete:'Complete',closed:'Closed',pending:'Pending',shipped:'Shipped',ordered:'Ordered'};
+  const cls=s.replace(/_/g,'-');
+  return `<span class="badge ${cls}">${m[s]||s}</span>`;
+}
+function pbadge(p){return `<span class="badge ${p}">${p.charAt(0).toUpperCase()+p.slice(1)}</span>`;}
+
+// ── DASHBOARD ────────────────────────────────────────────────────────────────
+function rDash(el){
+  const open=TICKETS.filter(t=>['new','open','in_progress'].includes(t.status)).length;
+  const pp=TICKETS.filter(t=>t.status==='pending_parts').length;
+  const done=TICKETS.filter(t=>t.status==='complete').length;
+  const hi=TICKETS.filter(t=>t.pri==='high'&&!['closed','complete'].includes(t.status)).length;
+  el.innerHTML=`
+  <div class="page-title">Dashboard</div>
+  <div class="page-sub">Good ${hr()}, ${CU.name.split(' ')[0]}</div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val accent">${open}</div><div class="stat-label">Open tickets</div></div>
+    <div class="stat-card"><div class="stat-val amber">${pp}</div><div class="stat-label">Parts pending</div></div>
+    <div class="stat-card"><div class="stat-val green">${done}</div><div class="stat-label">Completed</div></div>
+    <div class="stat-card"><div class="stat-val accent">${hi}</div><div class="stat-label">High priority</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Recent tickets <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openNewTicket()">+ New Ticket</button></div>
+    <div style="overflow-x:auto"><table class="tbl">
+      <thead><tr><th>Ref</th><th>Customer</th><th>Model</th><th>Fault</th><th>Tech</th><th>Pri</th><th>Status</th></tr></thead>
+      <tbody>${TICKETS.slice(0,6).map(t=>`<tr class="clickable" onclick="openTD('${t.id}')">
+        <td style="font-family:var(--mono);font-size:11px">${t.id}</td>
+        <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.cust)}</td>
+        <td style="font-family:var(--mono);font-size:11px;white-space:nowrap">${esc(t.model.slice(0,12))}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.fault)}</td>
+        <td style="white-space:nowrap">${esc(t.tech.split(' ')[0])}</td>
+        <td>${pbadge(t.pri)}</td>
+        <td>${badge(t.status)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Parts orders in flight</div>
+    ${TICKETS.filter(t=>t.order).map(t=>`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text-muted)">${t.order.ref}</span>
+      <span style="flex:1;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.cust)}</span>
+      ${badge(t.order.status)}
+      <span style="font-size:11px;color:var(--text-muted)">${t.order.eta?'ETA '+fmtDate(t.order.eta):'ETA TBC'}</span>
+      <button class="btn btn-ghost btn-sm" onclick="openTD('${t.id}')">View</button>
+    </div>`).join('')||'<div style="color:var(--text-muted);font-size:13px;padding:8px 0">No active parts orders</div>'}
+  </div>`;
+}
+
+// ── ALL TICKETS ──────────────────────────────────────────────────────────────
+function rTickets(el,filt='all'){
+  const list=filt==='all'?TICKETS:TICKETS.filter(t=>t.status===filt);
+  el.innerHTML=`
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <div class="page-title" style="margin-bottom:0">Tickets</div>
+    <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openNewTicket()">+ New</button>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+    ${['all','open','in_progress','pending_parts','complete','closed'].map(f=>`<button class="btn btn-sm ${filt===f?'btn-primary':'btn-ghost'}" onclick="rTickets(document.getElementById('main'),'${f}')">${f==='all'?'All':f.replace(/_/g,' ')}</button>`).join('')}
+  </div>
+  <div style="overflow-x:auto"><table class="tbl">
+    <thead><tr><th>Ref</th><th>Customer</th><th>Serial</th><th>Fault</th><th>Tech</th><th>Created</th><th>Pri</th><th>Status</th></tr></thead>
+    <tbody>${list.length?list.map(t=>`<tr class="clickable" onclick="openTD('${t.id}')">
+      <td style="font-family:var(--mono);font-size:11px">${t.id}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.cust)}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--text-muted)">${esc(t.serial)}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.fault)}</td>
+      <td style="white-space:nowrap">${esc(t.tech.split(' ')[0])}</td>
+      <td style="font-size:11px;color:var(--text-muted);white-space:nowrap">${fmtDate(t.created)}</td>
+      <td>${pbadge(t.pri)}</td>
+      <td>${badge(t.status)}</td>
+    </tr>`).join(''):'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted)">No tickets</td></tr>'}</tbody>
+  </table></div>`;
+}
+
+// ── MY CALLS (tech) ──────────────────────────────────────────────────────────
+function rCalls(el){
+  const tn=CU.tech?.name||CU.name;
+  const mine=TICKETS.filter(t=>t.tech===tn&&!['closed'].includes(t.status));
+  el.innerHTML=`
+  <div style="display:flex;align-items:center;margin-bottom:14px">
+    <div class="page-title" style="margin-bottom:0">My Calls</div>
+    <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openNewTicket()">+ Raise Ticket</button>
+  </div>
+  ${mine.length?mine.map(t=>`<div class="card" style="cursor:pointer;border-left:3px solid ${t.pri==='high'?'var(--red)':t.pri==='medium'?'var(--amber)':'var(--green)'}" onclick="openTD('${t.id}')">
+    <div style="display:flex;gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;margin-bottom:2px">${esc(t.cust)}</div>
+        <div style="font-family:var(--mono);font-size:10.5px;color:var(--text-muted);margin-bottom:6px">${esc(t.serial)} · ${esc(t.model)}</div>
+        <div style="font-size:12.5px;color:var(--text-mid)">${esc(t.fault)}</div>
+        ${t.notes?`<div style="font-size:11.5px;color:var(--text-muted);margin-top:5px;font-style:italic">"${esc(t.notes)}"</div>`:''}
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        ${badge(t.status)}<br>
+        <span style="font-size:10px;color:var(--text-muted);font-family:var(--mono)">${t.id}</span>
+        ${t.order?`<br><span style="font-size:10.5px;color:${t.order.status==='shipped'?'var(--green)':'var(--amber)'}">📦 ${t.order.status==='shipped'?'Shipped — ETA '+fmtDate(t.order.eta):'Parts ordered'}</span>`:''}
+      </div>
+    </div>
+  </div>`).join(''):'<div class="card" style="text-align:center;padding:32px;color:var(--text-muted)">No active calls assigned to you</div>'}`;
+}
+
+// ── FLEET ─────────────────────────────────────────────────────────────────────
+function rFleet(el){
+  const byT={};TICKETS.filter(t=>t.status!=='closed').forEach(t=>{if(!byT[t.tech])byT[t.tech]={o:0,h:0};byT[t.tech].o++;if(t.pri==='high')byT[t.tech].h++;});
+  el.innerHTML=`
+  <div class="page-title">Fleet Health</div>
+  <div class="page-sub">Open calls by technician · ${DB_EQUIPMENT.length} equipment units on record</div>
+  <div class="card"><div class="card-title">Technician workload</div>
+  <table class="tbl"><thead><tr><th>Technician</th><th>State</th><th>Open</th><th>High priority</th><th>Phone</th></tr></thead>
+  <tbody>${DB_TECHS.map(t=>`<tr>
+    <td>${esc(t.name)}</td><td>${t.state}</td>
+    <td>${byT[t.name]?.o||0}</td>
+    <td>${byT[t.name]?.h?`<span style="color:var(--red);font-weight:600">${byT[t.name].h}</span>`:'—'}</td>
+    <td><a href="tel:${t.phone}" style="color:var(--tronics);font-family:var(--mono);font-size:11px">${t.phone}</a></td>
+  </tr>`).join('')}</tbody></table></div>
+  <div class="card"><div class="card-title">Recently dispatched equipment (latest 20)</div>
+  <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Serial</th><th>Description</th><th>Customer</th><th>Dispatched</th></tr></thead>
+  <tbody>${DB_EQUIPMENT.slice(0,20).map(e=>`<tr>
+    <td style="font-family:var(--mono);font-size:11px">${esc(e.serial)}</td>
+    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${esc(e.description.replace(/^"+|"+$/g,''))}</td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.customer_name)}</td>
+    <td style="font-size:11px;color:var(--text-muted)">${e.dispatch_date}</td>
+  </tr>`).join('')}</tbody></table></div></div>`;
+}
+
+// ── INVENTORY ─────────────────────────────────────────────────────────────────
+function rInventory(el){
+  const isTech=CR==='tech';
+  el.innerHTML=`
+  <div class="page-title">${isTech?'Parts Lookup':'Inventory'}</div>
+  <div class="page-sub">${DB_INVENTORY.length} Videojet service parts · search by name or part code</div>
+  <div class="search-wrap">
+    <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M14 14l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <input type="text" id="invQ" placeholder="e.g. printhead, filter, make-up pump…" oninput="doInvSearch(this.value,${isTech})">
+  </div>
+  <div id="invOut"><div class="card" style="padding:0;overflow:hidden">${mkInvRows(DB_INVENTORY.slice(0,25),isTech)}</div></div>`;
+}
+
+function doInvSearch(q,isTech){
+  const ql=q.toLowerCase();
+  const r=q.length<2?DB_INVENTORY.slice(0,25):DB_INVENTORY.filter(i=>i.n.toLowerCase().includes(ql)||i.c.toLowerCase().includes(ql)).slice(0,60);
+  document.getElementById('invOut').innerHTML=`<div class="card" style="padding:0;overflow:hidden">${mkInvRows(r,isTech)||'<div style="padding:20px;text-align:center;color:var(--text-muted)">No parts found</div>'}</div>`;
+}
+
+function mkInvRows(items,isTech){
+  const tn=isTech?(CU.tech?.name||''):null;
+  return items.map(i=>{
+    const tl=tn?i.locs?.find(l=>l.l&&l.l.includes(tn.split(' ')[0])):null;
+    const wl=i.locs?.find(l=>l.l&&(l.l.includes('Warehouse')||l.l.includes('Main')));
+    const q=tl?tl.q:(wl?wl.q:i.qty);
+    const loc=tl?'With you':(wl?'Warehouse':'Various');
+    const sc=i.qty<=0?'s-out':i.qty<=2?'s-low':'s-ok';
+    const sl=i.qty<=0?'Out of stock':i.qty<=2?`Low (${i.qty})`:`${i.qty} in stock`;
+    return `<div class="part-row">
+      <div class="part-info"><div class="part-name">${esc(i.n)}</div><div class="part-code">${esc(i.c)} · ${loc} · Lead: ${i.lead||0}d</div></div>
+      <div class="part-stock"><div class="${sc}">${sl}</div><div style="font-size:10px;color:var(--text-muted)">${i.cost?'$'+Number(i.cost).toFixed(2):''}</div></div>
+    </div>`;
+  }).join('');
+}
+
+// ── AI ASSIST (standalone) ────────────────────────────────────────────────────
+function rAI(el){
+  chatMsgs=[];
+  el.innerHTML=`
+  <div class="page-title">AI Diagnosis</div>
+  <div class="page-sub">Describe the fault — Field Assist will diagnose it</div>
+  <div class="card">
+    <div class="chat-messages" id="aiMsgs"></div>
+    <div class="chat-row">
+      <div class="chat-wrap">
+        <textarea id="aiIn" placeholder="Describe the fault or error code…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();doAI('aiIn','aiMsgs','aiSend')}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
+        <button class="mic-btn" id="micBtn" onclick="mic('aiIn')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="5" y="1" width="6" height="9" rx="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 7.5A6 6 0 008 13.5m0 0A6 6 0 0014 7.5M8 13.5V15M6 15h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+      </div>
+      <button class="send-btn" id="aiSend" onclick="doAI('aiIn','aiMsgs','aiSend')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M9 4l4 4-4 4" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>`;
+}
+
+// ── TICKET DETAIL ─────────────────────────────────────────────────────────────
+function openTD(id){
+  const t=TICKETS.find(x=>x.id===id);if(!t)return;
+  document.getElementById('tdTitle').textContent='Ticket '+t.id;
+  const isCS=CR==='cs';
+  document.getElementById('tdBody').innerHTML=`
+  <div class="alert info">📋 ${esc(t.cust)} · Serial: ${esc(t.serial)}</div>
+  <div class="form-grid">
+    <div>
+      <div class="info-row"><span class="info-label">Status</span><span class="info-val">${badge(t.status)}</span></div>
+      <div class="info-row"><span class="info-label">Priority</span><span class="info-val">${pbadge(t.pri)}</span></div>
+      <div class="info-row"><span class="info-label">Technician</span><span class="info-val">${esc(t.tech)}</span></div>
+      <div class="info-row"><span class="info-label">Created</span><span class="info-val">${fmtDate(t.created)}</span></div>
+    </div>
+    <div>
+      <div class="info-row"><span class="info-label">Customer</span><span class="info-val">${esc(t.cust)}</span></div>
+      <div class="info-row"><span class="info-label">Code</span><span class="info-val" style="font-family:var(--mono);font-size:11px">${esc(t.cc)}</span></div>
+      <div class="info-row"><span class="info-label">Model</span><span class="info-val">${esc(t.model)}</span></div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Fault</div>
+  <div style="font-size:13px;line-height:1.6">${esc(t.fault)}</div>
+  ${t.notes?`<div style="margin-top:8px;font-size:12px;color:var(--text-mid);font-style:italic">"${esc(t.notes)}"</div>`:''}
+  ${t.order?`
+  <div class="divider"></div>
+  <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Parts Order</div>
+  <div class="form-grid">
+    <div class="info-row"><span class="info-label">Order ref</span><span class="info-val" style="font-family:var(--mono);font-size:11px">${t.order.ref}</span></div>
+    <div class="info-row"><span class="info-label">Status</span><span class="info-val">${badge(t.order.status)}</span></div>
+    ${t.order.carrier?`<div class="info-row"><span class="info-label">Carrier</span><span class="info-val">${esc(t.order.carrier)}</span></div>`:''}
+    ${t.order.tracking?`<div class="info-row"><span class="info-label">Tracking</span><span class="info-val" style="font-family:var(--mono);font-size:11px">${esc(t.order.tracking)}</span></div>`:''}
+    ${t.order.eta?`<div class="info-row"><span class="info-label">ETA</span><span class="info-val">${fmtDate(t.order.eta)}</span></div>`:''}
+  </div>
+  ${isCS&&t.order.status==='pending'?`
+  <div style="margin-top:12px;padding:12px;background:var(--surface2);border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:8px">
+    <div style="font-size:12px;font-weight:600">Update shipment</div>
+    <div class="form-grid">
+      <div class="field"><label>Carrier</label><input id="upC" placeholder="TNT, StarTrack…"></div>
+      <div class="field"><label>Tracking no.</label><input id="upT" placeholder="610123456789"></div>
+      <div class="field"><label>ETA</label><input id="upE" type="date"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="shipIt('${t.id}')">Mark Shipped → Tech notified</button>
+    <div class="alert info" style="font-size:11.5px;margin:0">📋 <strong>SAP action required:</strong> Copy the SAP transfer text below, paste into SAP B1 stock transfer, then mark shipped above once dispatched.</div>
+    <button class="btn btn-ghost btn-sm" onclick="copySAP('${t.id}')">📋 Copy SAP Transfer Text</button>
+  </div>`:''}
+  `:''}
+  <div class="divider"></div>
+  <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Add note</div>
+  <div class="field"><textarea id="tdNote" placeholder="Add a note to this ticket…" style="min-height:60px"></textarea></div>`;
+
+  document.getElementById('tdFoot').innerHTML=`
+  <button class="btn btn-ghost" onclick="closeModal('tdModal')">Close</button>
+  <button class="btn btn-ghost" onclick="saveNote('${t.id}')">Save Note</button>
+  ${!['closed','complete'].includes(t.status)?`<button class="btn btn-primary" onclick="advance('${t.id}')">${nxtLbl(t.status)}</button>`:''}
+  ${t.status==='complete'&&isCS?`<button class="btn btn-accent" onclick="closeT('${t.id}')">Close Ticket</button>`:''}`;
+
+  document.getElementById('tdModal').classList.add('open');
+}
+
+const NXT_LBL={new:'Mark Open',open:'Start Work',in_progress:'Mark Complete',pending_parts:'Start Work'};
+const NXT_ST={new:'open',open:'in_progress',pending_parts:'in_progress',in_progress:'complete'};
+function nxtLbl(s){return NXT_LBL[s]||'Advance';}
+function advance(id){const t=TICKETS.find(x=>x.id===id);if(!t)return;t.status=NXT_ST[t.status]||t.status;closeModal('tdModal');showView(CR==='cs'?'tickets':'calls');}
+function closeT(id){const t=TICKETS.find(x=>x.id===id);if(!t)return;t.status='closed';closeModal('tdModal');showView(CR==='cs'?'tickets':'calls');}
+function saveNote(id){const t=TICKETS.find(x=>x.id===id);const n=document.getElementById('tdNote')?.value?.trim();if(!t||!n)return;const ts=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});t.notes=(t.notes?t.notes+'\n':'')+ts+': '+n;closeModal('tdModal');alert('Note saved.');}
+function shipIt(id){const t=TICKETS.find(x=>x.id===id);if(!t||!t.order)return;t.order.status='shipped';t.order.carrier=document.getElementById('upC')?.value||'';t.order.tracking=document.getElementById('upT')?.value||'';t.order.eta=document.getElementById('upE')?.value||'';closeModal('tdModal');showView(CR==='cs'?'dash':'calls');}
+function copySAP(id){
+  const t=TICKETS.find(x=>x.id===id);if(!t)return;
+  const txt=`SAP B1 STOCK TRANSFER REQUEST\n${'─'.repeat(40)}\nRef:         ${t.order?.ref||genOrd()}\nDate:        ${new Date().toLocaleDateString('en-AU')}\nCustomer:    ${t.cust}\nCust Code:   ${t.cc}\nSerial No:   ${t.serial}\nModel:       ${t.model}\nFault:       ${t.fault}\nTechnician:  ${t.tech}\n${'─'.repeat(40)}\nPARTS TO TRANSFER:\n[Add part numbers, descriptions and quantities from parts order]\n${'─'.repeat(40)}\nCreated by Tronics Field Assist`;
+  navigator.clipboard.writeText(txt).then(()=>alert('SAP transfer text copied. Paste into SAP B1 stock transfer.'));
+}
+
+// ── NEW TICKET WIZARD ─────────────────────────────────────────────────────────
+function openNewTicket(){wzStep=1;wzData={};wzParts=[];chatMsgs=[];document.getElementById('ntModal').classList.add('open');drawWiz();}
+
+function drawWiz(){
+  const steps=['Customer','Equipment','Fault + AI','Parts','Confirm'];
+  const sh=steps.map((s,i)=>`<div class="step ${wzStep===i+1?'active':wzStep>i+1?'done':''}"><div class="step-num">${wzStep>i+1?'✓':i+1}</div><div class="step-label">${s}</div></div>${i<steps.length-1?'<div class="step-line"></div>':''}`).join('');
+  document.getElementById('ntBody').innerHTML=`<div class="steps">${sh}</div><div id="wzC"></div>`;
+  document.getElementById('ntFoot').innerHTML=`
+    ${wzStep>1?`<button class="btn btn-ghost" onclick="wzStep--;drawWiz()">← Back</button>`:`<button class="btn btn-ghost" onclick="closeModal('ntModal')">Cancel</button>`}
+    <button class="btn btn-primary" onclick="wzNext()">${wzStep<5?'Continue →':'✓ Create Ticket'}</button>`;
+  const c=document.getElementById('wzC');
+  [null,wz1,wz2,wz3,wz4,wz5][wzStep](c);
+}
+
+function wz1(el){
+  el.innerHTML=`
+  <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Customer details</div>
+  <div class="search-wrap">
+    <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M14 14l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <input id="cSrch" type="text" placeholder="Search customer name or code…" oninput="srchCust(this.value)" autocomplete="off">
+    <div class="search-results" id="cRes"></div>
+  </div>
+  <div class="form-grid">
+    <div class="field"><label>Customer code</label><input id="wCC" value="${esc(wzData.cc||'')}" placeholder="C10XXX"></div>
+    <div class="field"><label>Customer name *</label><input id="wCN" value="${esc(wzData.cn||'')}" placeholder="Company name"></div>
+    <div class="field"><label>Contact name</label><input id="wCtN" value="${esc(wzData.ctN||'')}" placeholder="Site contact"></div>
+    <div class="field"><label>Contact phone</label><input id="wCtP" value="${esc(wzData.ctP||'')}" type="tel" placeholder="0400 000 000"></div>
+    <div class="field full"><label>Site address</label><input id="wAddr" value="${esc(wzData.addr||'')}" placeholder="Street, suburb, state"></div>
+    <div class="field full"><label>Site remarks / access notes</label><textarea id="wRem" style="min-height:60px">${esc(wzData.rem||'')}</textarea></div>
+  </div>`;
+}
+
+function srchCust(q){
+  const r=document.getElementById('cRes');
+  if(!q||q.length<2){r.style.display='none';return;}
+  const ql=q.toLowerCase();
+  const hits=DB_CUSTOMERS.filter(c=>c.n.toLowerCase().includes(ql)||c.c.toLowerCase().includes(ql)).slice(0,12);
+  if(!hits.length){r.style.display='none';return;}
+  r.innerHTML=hits.map(c=>`<div class="sri" onclick='pickCust(${JSON.stringify(c).replace(/'/g,"\\'")})'><div>${esc(c.n)}</div><div class="sri-code">${esc(c.c)} · ${c.s||''} · ${c.p||''}</div></div>`).join('');
+  r.style.display='block';
+}
+
+function pickCust(c){
+  document.getElementById('wCC').value=c.c;document.getElementById('wCN').value=c.n;
+  document.getElementById('wCtP').value=c.p||'';document.getElementById('wAddr').value=c.a||'';
+  document.getElementById('cRes').style.display='none';document.getElementById('cSrch').value=c.n;
+  wzData._cc=c.c;
+  // pre-load equipment
+  wzData._eq=DB_EQUIPMENT.filter(e=>e.customer_code===c.c);
+}
+
+function wz2(el){
+  const eq=wzData._eq||[];
+  el.innerHTML=`
+  <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Equipment</div>
+  ${eq.length?`<div style="font-size:12px;color:var(--tronics);font-weight:500;margin-bottom:8px">Equipment on record for this customer (${eq.length} units) — click to auto-fill</div>
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:12px">${eq.slice(0,8).map(e=>`<div class="part-row" style="cursor:pointer" onclick='pickEq(${JSON.stringify({s:e.serial,d:e.description.replace(/^"+|"+$/g,""),ic:e.item_code}).replace(/'/g,"\\'")})'><div class="part-info"><div class="part-name">${esc(e.description.replace(/^"+|"+$/g,''))}</div><div class="part-code">${esc(e.serial)} · ${e.dispatch_date}</div></div><span style="color:var(--tronics)">→</span></div>`).join('')}</div>`:`<div class="alert info" style="margin-bottom:12px">No equipment on record for this customer — enter details below.</div>`}
+  <div class="form-grid">
+    <div class="field"><label>Serial number <span style="color:var(--text-muted);font-weight:400">(optional if unknown)</span></label><input id="wSer" value="${esc(wzData.ser||'')}" placeholder="e.g. 25357001C65ZH — leave blank if unknown"></div>
+    <div class="field"><label>Model / description *</label><input id="wMod" value="${esc(wzData.mod||'')}" placeholder="e.g. VJ1580 PLUS, VJ1280, DataFlex 6330"></div>
+    <div class="field"><label>Item code</label><input id="wIC" value="${esc(wzData.ic||'')}" placeholder="e.g. P1580-00-563S-0100 (optional)"></div>
+    <div class="field"><label>Assign technician *</label>
+      <select id="wTech">${DB_TECHS.map(t=>`<option value="${esc(t.name)}" ${wzData.tech===t.name?'selected':''}>${t.name} (${t.state})</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>Priority</label>
+      <select id="wPri"><option value="low" ${wzData.pri==='low'?'selected':''}>Low</option><option value="medium" ${wzData.pri==='medium'?'selected':''}>Medium</option><option value="high" ${wzData.pri==='high'?'selected':''}>High — line impact</option></select>
+    </div>
+    <div class="field full"><label>Location / line description</label><input id="wLoc" value="${esc(wzData.loc||'')}" placeholder="e.g. Line 3, Filler area — helps tech find the machine"></div>
+  </div>
+  <div style="margin-top:4px;padding:10px 12px;background:var(--tronics-light);border-radius:var(--radius-sm);font-size:12px;color:var(--tronics)">
+    💡 New printer not in the system? Fill in model and serial above — it will be added to your records when the ticket is created.
+  </div>`;
+}
+
+function pickEq(e){document.getElementById('wSer').value=e.s;document.getElementById('wMod').value=e.d;document.getElementById('wIC').value=e.ic;}
+
+function wz3(el){
+  el.innerHTML=`
+  <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Fault description + AI assist</div>
+  <div class="field" style="margin-bottom:12px"><label>Fault description *</label><textarea id="wFlt" style="min-height:70px" placeholder="Describe the fault or error code as reported by the customer…">${esc(wzData.flt||'')}</textarea></div>
+  <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">AI diagnosis assist</div>
+  <div class="chat-messages" id="wzMsgs"></div>
+  <div class="chat-row">
+    <div class="chat-wrap"><textarea id="wzAiIn" placeholder="Ask AI about this fault…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();wzAI()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea></div>
+    <button class="send-btn" id="wzSend" onclick="wzAI()"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M9 4l4 4-4 4" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>`;
+}
+
+function wz4(el){
+  el.innerHTML=`
+  <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Parts & order</div>
+  <div class="search-wrap">
+    <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M14 14l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <input id="pSrch" type="text" placeholder="Search parts by name or code…" oninput="srchParts(this.value)" autocomplete="off">
+    <div class="search-results" id="pRes"></div>
+  </div>
+  <div id="wzPartsList" style="margin-bottom:12px">${mkWzParts()}</div>
+  <div class="form-grid">
+    <div class="field"><label>Delivery destination</label>
+      <select id="wDest"><option value="tech">To technician</option><option value="customer">To customer site</option><option value="branch">Branch hold</option></select>
+    </div>
+    <div class="field"><label>Urgency</label>
+      <select id="wUrg"><option>Standard (3–5 days)</option><option>Express (1–2 days)</option><option>Urgent — next flight</option><option>Line down — escalate</option></select>
+    </div>
+    <div class="field full"><label>Deliver to (tech name / address / branch)</label><input id="wDestD" placeholder="e.g. Con Haltogiannidis — SYD warehouse collect" value="${esc(wzData.tech||'')}"></div>
+    <div class="field full"><label>Order / dispatch notes</label><textarea id="wOrdN" style="min-height:50px" placeholder="Special instructions, fragile items, authority to leave…">${esc(wzData.ordN||'')}</textarea></div>
+  </div>`;
+}
+
+function srchParts(q){
+  const r=document.getElementById('pRes');
+  if(!q||q.length<2){r.style.display='none';return;}
+  const ql=q.toLowerCase();
+  const hits=DB_INVENTORY.filter(i=>i.n.toLowerCase().includes(ql)||i.c.toLowerCase().includes(ql)).slice(0,12);
+  if(!hits.length){r.style.display='none';return;}
+  r.innerHTML=hits.map(i=>`<div class="sri" onclick='addPart(${JSON.stringify({c:i.c,n:i.n,qty:i.qty,cost:i.cost,lead:i.lead}).replace(/'/g,"\\'")})'><div>${esc(i.n)}</div><div class="sri-code">${i.c} · ${i.qty>0?`<span style="color:var(--green)">${i.qty} in stock</span>`:'<span style="color:var(--red)">Out of stock</span>'} · Lead: ${i.lead}d</div></div>`).join('');
+  r.style.display='block';
+}
+
+function addPart(p){if(!wzParts.find(x=>x.c===p.c))wzParts.push({...p,oq:1});document.getElementById('wzPartsList').innerHTML=mkWzParts();document.getElementById('pRes').style.display='none';document.getElementById('pSrch').value='';}
+function rmPart(c){wzParts=wzParts.filter(p=>p.c!==c);document.getElementById('wzPartsList').innerHTML=mkWzParts();}
+function mkWzParts(){if(!wzParts.length)return '<div style="font-size:12px;color:var(--text-muted);padding:8px 0">No parts selected — search above to add.</div>';return `<div class="card" style="padding:0;overflow:hidden">${wzParts.map(p=>`<div class="part-row"><div class="part-info"><div class="part-name">${esc(p.n)}</div><div class="part-code">${esc(p.c)} · Qty: ${p.qty} · $${Number(p.cost||0).toFixed(2)}</div></div><button onclick="rmPart('${p.c}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:2px 6px;margin-left:auto">×</button></div>`).join('')}</div>`;}
+
+function wz5(el){
+  const tot=wzParts.reduce((s,p)=>s+Number(p.cost||0),0);
+  el.innerHTML=`
+  <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Confirm & create</div>
+  <div class="card" style="padding:12px 14px;display:flex;flex-direction:column;gap:5px">
+    <div class="info-row"><span class="info-label">Customer</span><span class="info-val">${esc(wzData.cn||'—')}</span></div>
+    <div class="info-row"><span class="info-label">Serial</span><span class="info-val" style="font-family:var(--mono);font-size:11px">${esc(wzData.ser||'—')}</span></div>
+    <div class="info-row"><span class="info-label">Model</span><span class="info-val">${esc(wzData.mod||'—')}</span></div>
+    <div class="info-row"><span class="info-label">Fault</span><span class="info-val">${esc(wzData.flt||'—')}</span></div>
+    <div class="info-row"><span class="info-label">Technician</span><span class="info-val">${esc(wzData.tech||'—')}</span></div>
+    <div class="info-row"><span class="info-label">Priority</span><span class="info-val">${wzData.pri||'medium'}</span></div>
+    <div class="info-row"><span class="info-label">Parts</span><span class="info-val">${wzParts.length} items · $${tot.toFixed(2)}</span></div>
+    <div class="info-row"><span class="info-label">Urgency</span><span class="info-val">${esc(wzData.urg||'Standard')}</span></div>
+    ${wzData.rem?`<div class="info-row"><span class="info-label">Remarks</span><span class="info-val">${esc(wzData.rem)}</span></div>`:''}
+  </div>
+  ${wzParts.length?'<div class="alert warn">⚠ Parts order will be created with status PENDING. Action: copy SAP transfer text from ticket, paste into SAP B1, then mark shipped once dispatched.</div>':''}
+  <div class="alert info">Once created the ticket appears in the queue. The assigned tech sees it in their calls immediately.</div>`;
+}
+
+function wzNext(){
+  if(wzStep===1){
+    const n=document.getElementById('wCN')?.value?.trim();if(!n){alert('Enter customer name.');return;}
+    wzData={...wzData,cc:document.getElementById('wCC')?.value||'',cn:n,ctN:document.getElementById('wCtN')?.value||'',ctP:document.getElementById('wCtP')?.value||'',addr:document.getElementById('wAddr')?.value||'',rem:document.getElementById('wRem')?.value||''};
+    if(!wzData._eq&&wzData.cc)wzData._eq=DB_EQUIPMENT.filter(e=>e.customer_code===wzData.cc);
+  } else if(wzStep===2){
+    const mod=document.getElementById('wMod')?.value?.trim();if(!mod){alert('Enter a model or description.');return;}
+    const ser=document.getElementById('wSer')?.value?.trim()||'UNKNOWN';
+    wzData={...wzData,ser,mod,ic:document.getElementById('wIC')?.value||'',tech:document.getElementById('wTech')?.value||'',pri:document.getElementById('wPri')?.value||'medium',loc:document.getElementById('wLoc')?.value||''};
+    // If serial provided and not already in DB, add it so it appears next time
+    if(ser!=='UNKNOWN'&&wzData.cc&&!DB_EQUIPMENT.find(e=>e.serial===ser)){
+      DB_EQUIPMENT.unshift({serial:ser,item_code:wzData.ic||'',description:mod,customer_code:wzData.cc,customer_name:wzData.cn||'',dispatch_date:new Date().toLocaleDateString('en-AU')});
+    }
+  } else if(wzStep===3){
+    const f=document.getElementById('wFlt')?.value?.trim();if(!f){alert('Describe the fault.');return;}
+    wzData={...wzData,flt:f};
+  } else if(wzStep===4){
+    wzData={...wzData,dest:document.getElementById('wDest')?.value||'',urg:document.getElementById('wUrg')?.value||'',destD:document.getElementById('wDestD')?.value||'',ordN:document.getElementById('wOrdN')?.value||''};
+  } else if(wzStep===5){mkTicket();return;}
+  wzStep++;drawWiz();
+}
+
+function mkTicket(){
+  const ref=genRef();
+  const t={id:ref,cust:wzData.cn,cc:wzData.cc,serial:wzData.ser,model:wzData.mod,fault:wzData.flt,status:wzParts.length?'pending_parts':'open',pri:wzData.pri||'medium',tech:wzData.tech,created:new Date().toISOString().slice(0,10),notes:wzData.rem||'',parts:wzParts,order:wzParts.length?{ref:genOrd(),status:'pending',carrier:null,tracking:null,eta:null}:null};
+  TICKETS.unshift(t);closeModal('ntModal');
+  showView(CR==='cs'?'dash':'calls');
+  setTimeout(()=>{const b=document.createElement('div');b.style.cssText='position:fixed;top:70px;right:20px;background:var(--tronics);color:#fff;padding:11px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:200;box-shadow:0 4px 20px rgba(0,0,0,.15)';b.textContent='✓ '+ref+' created'+(t.order?' — action SAP transfer':'');document.body.appendChild(b);setTimeout(()=>b.remove(),3000);},100);
+}
+
+// ── AI ────────────────────────────────────────────────────────────────────────
+function md2h(t){
+  t=t.replace(/^###\s(.+)$/gm,'<h3>$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  const lines=t.split('\n');const out=[];let inL=false;
+  for(const l of lines){const tr=l.trim();if(!tr){if(inL){out.push('</ul>');inL=false;}continue;}
+    const m=tr.match(/^(?:\d+\.|[-•*])\s+(.+)/);
+    if(m){if(!inL){out.push('<ul>');inL=true;}out.push('<li>'+m[1]+'</li>');}
+    else{if(inL){out.push('</ul>');inL=false;}if(tr.startsWith('<'))out.push(tr);else out.push('<p>'+tr+'</p>');}}
+  if(inL)out.push('</ul>');return out.join('');
+}
+
+function apMsg(cid,role,html){const c=document.getElementById(cid);if(!c)return;const d=document.createElement('div');d.className='msg '+role;d.innerHTML=`<div class="msg-lbl">${role==='user'?'You':'Field Assist'}</div><div class="msg-bubble">${html}</div>`;c.appendChild(d);c.scrollTop=c.scrollHeight;}
+function showThink(cid){const c=document.getElementById(cid);if(!c)return;const d=document.createElement('div');d.className='msg assistant';d.id='thk-'+cid;d.innerHTML='<div class="msg-lbl">Field Assist</div><div class="thinking"><div class="thinking-dots"><span></span><span></span><span></span></div><span style="font-size:11px;color:var(--text-muted)">Diagnosing…</span></div>';c.appendChild(d);c.scrollTop=c.scrollHeight;}
+function rmThink(cid){const t=document.getElementById('thk-'+cid);if(t)t.remove();}
+
+async function doAI(inId,msgId,btnId){
+  if(isAI)return;const inp=document.getElementById(inId);if(!inp)return;
+  const txt=inp.value.trim();if(!txt)return;
+  inp.value='';inp.style.height='auto';document.getElementById(btnId).disabled=true;isAI=true;
+  chatMsgs.push({role:'user',content:txt});apMsg(msgId,'user',esc(txt));showThink(msgId);
+  const sys=`You are Field Assist, Videojet service diagnosis AI for Tronics Australia. Diagnose Videojet faults concisely — ranked probable causes, practical diagnostic steps, parts to check. Keep it short — field tech on phone.`;
+  const apiKey=(window.FA_CONFIG?.ANTHROPIC_API_KEY||'').trim();
+  if(!apiKey||apiKey.includes('PASTE-YOUR-KEY')){rmThink(msgId);apMsg(msgId,'assistant','<p>AI not configured — edit config.js and add your Anthropic API key.</p>');isAI=false;document.getElementById(btnId).disabled=false;return;}
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:window.FA_CONFIG?.MODEL||'claude-haiku-4-5',max_tokens:700,system:sys,messages:chatMsgs})});
+    const raw=await r.text();rmThink(msgId);
+    let d;try{d=JSON.parse(raw);}catch{apMsg(msgId,'assistant','<p>Unexpected response from API — check browser console for details.</p>');isAI=false;document.getElementById(btnId).disabled=false;return;}
+    if(d.content&&d.content[0]){const t=d.content[0].text;apMsg(msgId,'assistant',md2h(t));chatMsgs.push({role:'assistant',content:t});}
+    else if(d.error)apMsg(msgId,'assistant','<p>API error: '+esc(typeof d.error==='string'?d.error:JSON.stringify(d.error))+'</p>');
+    else apMsg(msgId,'assistant','<p>No response.</p>');
+  }catch(e){rmThink(msgId);apMsg(msgId,'assistant','<p>Error: '+esc(e.message)+'</p>');}
+  isAI=false;document.getElementById(btnId).disabled=false;
+}
+
+function wzAI(){doAI('wzAiIn','wzMsgs','wzSend');}
+
+function mic(inId){
+  if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in window)){alert('Voice requires Chrome.');return;}
+  if(recognition&&recognition._on){recognition.stop();return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;recognition=new SR();recognition.lang='en-AU';recognition._on=true;
+  recognition.onresult=e=>{const i=document.getElementById(inId);if(i)i.value=e.results[0][0].transcript;};
+  recognition.onend=()=>{recognition._on=false;document.getElementById('micBtn')?.classList.remove('rec');};
+  recognition.start();document.getElementById('micBtn')?.classList.add('rec');
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+</script>
+</body>
+</html>
